@@ -2,5 +2,6 @@
 setup.cfg
 setup.py
 stat_api/__init__.py
+stat_api/helpers.py
 stat_api/stat_api.py
 stat_api/test.py
