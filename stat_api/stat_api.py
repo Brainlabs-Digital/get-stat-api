@@ -2,37 +2,40 @@ import time
 
 import requests
 
+from helpers import tidy_dates
+
 ENDPOINTS_DATA = {
     # projects
     "/projects/list": (),
-    "/projects/create": (),
-    "/projects/update": (),
-    "/projects/delete": (),
+    "/projects/create": ("name"),
+    "/projects/update": ("id", "name"),
+    "/projects/delete": ("id"),
     # sites
-    "/sites/all": (),
-    "/sites/list": (),
-    "/sites/ranking_distributions": (),
-    "/sites/create": (),
-    "/sites/update": (),
-    "/sites/delete": (),
+    "/sites/all": ("results"),
+    "/sites/list": ("project_id"),
+    "/sites/ranking_distributions": ("id", "from_date", "to_date"),
+    "/sites/create": ("project_id", "url", "drop_www_prefix", "drop_directories"),
+    "/sites/update": ("id", "url", "title", "drop_www_prefix", "drop_directories"),
+    "/sites/delete": ("id"),
     # tags
-    "/tags/list": (),
-    "/tags/ranking_distributions": (),
+    "/tags/list": ("site_id", "results"),
+    "/tags/ranking_distributions": ("id", "from_date", "to_date"),
     # keywords
-    "/keywords/list": (),
-    "/keywords/create": (),
-    "/keywords/delete": (),
+    "/keywords/list": ("site_id", "results"),
+    "/keywords/create": ("site_id", "market", "location", "device", "type",
+                         "keyword", "tag", "tag_color"),
+    "/keywords/delete": ("id"),
     # rankings
-    "/rankings/list": (),
+    "/rankings/list": ("keyword_id", "from_date", "to_date"),
     # serps
-    "/serps/show": (),
+    "/serps/show": ("keyword_id", "engine", "date"),
     # bulk jobs
-    "/bulk/list": (),
-    "/bulk/ranks": (),
-    "/bulk/status": (),
-    "/bulk/delete": (),
-    "/bulk/site_ranking_distributions": (),
-    "/bulk/tag_ranking_distributions": (),
+    "/bulk/list": ("results"),
+    "/bulk/ranks": ("date", "site_id", "currently_tracked_only", "crawled_keywords_only"),
+    "/bulk/status": ("id"),
+    "/bulk/delete": ("id"),
+    "/bulk/site_ranking_distributions": ("date"),
+    "/bulk/tag_ranking_distributions": ("date"),
 }
 
 class StatInvalidEndpoint(Exception):
@@ -41,7 +44,11 @@ class StatInvalidEndpoint(Exception):
 class StatRequestError(Exception):
     pass
 
+class InvalidParameters(Exception):
+    pass
+
 class Stat(object):
+    """ An object for getting/settings data in STAT using their API """
 
     def __init__(self, subdomain, api_key):
 
@@ -85,8 +92,18 @@ class Stat(object):
         if not endpoint in ENDPOINTS_DATA.keys():
             raise InvalidEndpoint("The endpoint {endpoint} does not exist".format(endpoint))
 
+        allowed_parameters = ENDPOINTS_DATA[endpoint]
+        illegal_paramters = [key for key in kwargs.keys()
+                             if not key in allowed_parameters]
+        if illegal_paramters:
+            raise InvalidParameters("The parameter(s) {parameters} are not legal"
+                                    " for the endpoint `{endpoint}`".format(
+                                        parameters=illegal_paramters,
+                                        endpoint=endpoint))
+
         url = self._make_api_request_url(endpoint)
         kwargs.update({'format': 'json'})
+        kwargs = tidy_dates(kwargs)
 
         return self._do_request(url, kwargs)
 
