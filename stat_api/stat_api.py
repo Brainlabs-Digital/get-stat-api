@@ -44,6 +44,9 @@ class StatInvalidEndpoint(Exception):
 class StatRequestError(Exception):
     pass
 
+class StatResponseError(Exception):
+    pass
+
 class InvalidParameters(Exception):
     pass
 
@@ -79,6 +82,10 @@ class Stat(object):
             raise StatRequestError("Not Found")
         elif status_code == 500:
             raise StatRequestError("Internal Server Error")
+
+        response_data = r.json()
+        if not 'Response' in response_data:
+            raise StatResponseError(response_data['Result'])
 
         return r.json()['Response']
 
