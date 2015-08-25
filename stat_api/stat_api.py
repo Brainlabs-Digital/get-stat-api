@@ -38,29 +38,34 @@ ENDPOINTS_DATA = {
     "/bulk/tag_ranking_distributions": ("date"),
 }
 
+
 class StatInvalidEndpoint(Exception):
     pass
+
 
 class StatRequestError(Exception):
     pass
 
+
 class StatResponseError(Exception):
     pass
 
+
 class InvalidParameters(Exception):
     pass
+
 
 class Stat(object):
     """ An object for getting/settings data in STAT using their API """
 
     def __init__(self, subdomain, api_key):
 
-        self.base_url =  self._make_base_url(subdomain)
+        self.base_url = self._make_base_url(subdomain)
         self.api_key = api_key
 
     def _make_base_url(self, subdomain):
 
-        return "http://" + subdomain + ".getstat.com"
+        return "https://" + subdomain + ".getstat.com"
 
     def _make_api_request_url(self, endpoint):
 
@@ -84,7 +89,7 @@ class Stat(object):
             raise StatRequestError("Internal Server Error")
 
         response_data = r.json()
-        if not 'Response' in response_data:
+        if 'Response' not in response_data:
             raise StatResponseError(response_data['Result'])
 
         return r.json()['Response']
@@ -96,12 +101,12 @@ class Stat(object):
         kawrgs should be a dictionary of query parameters for the request
         """
 
-        if not endpoint in ENDPOINTS_DATA.keys():
-            raise InvalidEndpoint("The endpoint {endpoint} does not exist".format(endpoint))
+        if endpoint not in ENDPOINTS_DATA.keys():
+            raise StatInvalidEndpoint("The endpoint {endpoint} does not exist".format(endpoint))
 
         allowed_parameters = ENDPOINTS_DATA[endpoint]
         illegal_paramters = [key for key in kwargs.keys()
-                             if not key in allowed_parameters]
+                             if key not in allowed_parameters]
         if illegal_paramters:
             raise InvalidParameters("The parameter(s) {parameters} are not legal"
                                     " for the endpoint `{endpoint}`".format(
