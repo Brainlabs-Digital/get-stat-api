@@ -2,7 +2,7 @@ from distutils.core import setup
 setup(
   name = 'stat_api',
   packages = ['stat_api'], # this must be the same as the name above
-  version = '0.3.2',
+  version = '0.3.3',
   description = 'A wrapper for the getstat.com API',
   author = 'Austin Platt',
   author_email = 'austin.platt@distilled.net',
