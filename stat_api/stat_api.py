@@ -38,24 +38,33 @@ ENDPOINTS_DATA = {
     "/bulk/tag_ranking_distributions": ("date"),
 }
 
+
 class StatInvalidEndpoint(Exception):
     pass
+
 
 class StatRequestError(Exception):
     pass
 
+
 class StatResponseError(Exception):
     pass
 
+
 class InvalidParameters(Exception):
     pass
+
+
+class StatTimeoutException(Exception):
+    pass
+
 
 class Stat(object):
     """ An object for getting/settings data in STAT using their API """
 
     def __init__(self, subdomain, api_key):
 
-        self.base_url =  self._make_base_url(subdomain)
+        self.base_url = self._make_base_url(subdomain)
         self.api_key = api_key
 
     def _make_base_url(self, subdomain):
@@ -84,7 +93,7 @@ class Stat(object):
             raise StatRequestError("Internal Server Error")
 
         response_data = r.json()
-        if not 'Response' in response_data:
+        if 'Response' not in response_data:
             raise StatResponseError(response_data['Result'])
 
         return r.json()['Response']
@@ -96,12 +105,12 @@ class Stat(object):
         kawrgs should be a dictionary of query parameters for the request
         """
 
-        if not endpoint in ENDPOINTS_DATA.keys():
-            raise InvalidEndpoint("The endpoint {endpoint} does not exist".format(endpoint))
+        if endpoint not in ENDPOINTS_DATA.keys():
+            raise StatInvalidEndpoint("The endpoint {endpoint} does not exist".format(endpoint))
 
         allowed_parameters = ENDPOINTS_DATA[endpoint]
         illegal_paramters = [key for key in kwargs.keys()
-                             if not key in allowed_parameters]
+                             if key not in allowed_parameters]
         if illegal_paramters:
             raise InvalidParameters("The parameter(s) {parameters} are not legal"
                                     " for the endpoint `{endpoint}`".format(
@@ -151,7 +160,7 @@ class StatBulkJob(object):
         job_id = result['Result']['Id']
         return job_id
 
-    def create_job_and_wait_for_result(self, endpoint, time_interval=5, **kwargs):
+    def create_job_and_wait_for_result(self, endpoint, time_interval=5, max_retries=5, **kwargs):
         """ Make a job and wait for the result (by polling for the job status)
 
         Optionally, set the length of the period to wait between checking if
@@ -160,9 +169,13 @@ class StatBulkJob(object):
 
         job_id = self.create_job(endpoint, **kwargs)
 
+        tries = 0
         while True:
+            if tries == max_retries:
+                raise StatTimeoutException
             time.sleep(time_interval)
             if self.stat.is_job_done(job_id):
                 break
+            tries += 1
 
         return self.stat.get_job_result(job_id)
