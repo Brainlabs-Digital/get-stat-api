@@ -69,7 +69,7 @@ class Stat(object):
 
     def _make_base_url(self, subdomain):
 
-        return "http://" + subdomain + ".getstat.com"
+        return "https://" + subdomain + ".getstat.com"
 
     def _make_api_request_url(self, endpoint):
 
